@@ -87,7 +87,7 @@ const app = {
     });
 
     // test trình phát nhạc
-
+    const player = document.querySelector(".player");
     const listSongs = document.querySelectorAll(".song");
     const audioPlay = document.querySelector("#audio");
     const buttonPlay = document.querySelector(".btn-toggle-play");
@@ -95,7 +95,6 @@ const app = {
     const nameSongNow = document.querySelector(".songName");
     const btnPrev = document.querySelector(".btn-prev");
     const btnNext = document.querySelector(".btn-next");
-
     // cd xoay
     cdRotate = () => {
       cdThumb.classList.add("songRotate");
@@ -107,10 +106,12 @@ const app = {
 
     playMusic = () => {
       audioPlay.play();
+      player.classList.add("playing");
       cdRotate();
     };
     pauseMusic = () => {
       audioPlay.pause();
+      player.classList.remove("playing");
       cdUnRotate();
     };
 
@@ -193,6 +194,12 @@ const app = {
       }
 
       playNewMusic(idSong);
+    });
+
+    // random
+    let btnRandom = document.querySelector(".btn-random");
+    btnRandom.addEventListener("click", () => {
+      playNewMusic(Math.floor(Math.random() * app.songs.length));
     });
   },
   start: () => {
