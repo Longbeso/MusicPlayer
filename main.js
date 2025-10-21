@@ -144,6 +144,7 @@ const app = {
       const percent = 100 * (audioPlay.currentTime / audioPlay.duration);
       process.value = percent;
       if (audioPlay.currentTime == audioPlay.duration) {
+        player.classList.remove("playing");
         cdUnRotate();
       }
     });
@@ -209,3 +210,13 @@ const app = {
 };
 
 app.start();
+
+// let apiMusic = "http://localhost:3000/songs";
+
+// fetch(apiMusic)
+//   .then((response) => {
+//     return response.json();
+//   })
+//   .then((data) => {
+//     console.log(data);
+//   });
