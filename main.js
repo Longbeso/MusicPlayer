@@ -1,4 +1,12 @@
 const app = {
+  // dùng this trỏ tới object thì dùng function bình thường
+  linkApi:
+    "https://raw.githubusercontent.com/Longbeso/MusicPlayer/refs/heads/useMockApi/data/music.json",
+  getData: async function () {
+    let response = await fetch(this.linkApi);
+    let songs = await response.json();
+    return songs;
+  },
   songs: [
     {
       id: 0,
@@ -52,6 +60,9 @@ const app = {
   ],
   render: () => {
     let playList = document.querySelector(".playlist");
+    app.getData().then((son3) => {
+      console.log(son3);
+    });
     let htmls = app.songs.map((song) => {
       return `
         <div class="song">
