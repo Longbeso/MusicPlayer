@@ -1,4 +1,12 @@
 const app = {
+  // dùng this trỏ tới object thì dùng function bình thường
+  linkApi:
+    "https://raw.githubusercontent.com/Longbeso/MusicPlayer/refs/heads/main/data/music.json",
+  getData: async function () {
+    let response = await fetch(this.linkApi);
+    let songs = response.json();
+    return songs;
+  },
   songs: [
     {
       id: 0,
@@ -211,12 +219,12 @@ const app = {
 
 app.start();
 
-// let apiMusic = "http://localhost:3000/songs";
-
-// fetch(apiMusic)
-//   .then((response) => {
-//     return response.json();
-//   })
-//   .then((data) => {
-//     console.log(data);
-//   });
+let linkApi =
+  "https://raw.githubusercontent.com/Longbeso/MusicPlayer/refs/heads/main/data/music.json";
+fetch(linkApi)
+  .then((response) => {
+    return response.json();
+  })
+  .then((data) => {
+    console.log(data);
+  });
