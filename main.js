@@ -1,71 +1,34 @@
+let cd = document.querySelector(".cd");
+const heading = document.querySelector("header h2");
+const cdThumb = document.querySelector(".cd-thumb");
+const audio = document.querySelector("#audio");
+const player = document.querySelector(".player");
+const playBtn = document.querySelector(".btn-toggle-play");
+const prevBtn = document.querySelector(".btn-prev");
+const nextBtn = document.querySelector(".btn-next");
+const randomBtn = document.querySelector(".btn-random");
+const playList = document.querySelector(".playlist");
+const repeatBtn = document.querySelector(".btn-repeat");
+const progress = document.querySelector(".progress");
 const app = {
+  currentIndex: 0,
+  isPlaying: false,
+  isRandom: false,
+  isRepeat: false,
   // dùng this trỏ tới object thì dùng function bình thường
   linkApi:
     "https://raw.githubusercontent.com/Longbeso/MusicPlayer/refs/heads/useMockApi/data/music.json",
+
+  Songs: [],
   getData: async function () {
     let response = await fetch(this.linkApi);
     let songs = await response.json();
-    return songs;
+    app.Songs = [...songs];
   },
-  songs: [
-    {
-      id: 0,
-      name: "Mơ hồ",
-      singer: "Bùi Anh Tuấn",
-      path: "./music/1.mp3",
-      image: "./img/img1.jpg",
-    },
-    {
-      id: 1,
-      name: "Nơi tình yêu bắt đầu",
-      singer: "Bùi Anh Tuấn",
-      path: "./music/2.mp3",
-      image: "./img/img2.jpg",
-    },
-    {
-      id: 2,
-      name: "Nơi tình yêu kết thúc",
-      singer: "Bùi Anh Tuấn",
-      path: "./music/3.mp3",
-      image: "./img/img3.jpg",
-    },
-    {
-      id: 3,
-      name: "Phố không mùa",
-      singer: "Bùi Anh Tuấn",
-      path: "./music/4.mp3",
-      image: "./img/img4.jpg",
-    },
-    {
-      id: 4,
-      name: "Thuận theo ý trời",
-      singer: "Bùi Anh Tuấn",
-      path: "./music/5.mp3",
-      image: "./img/img5.jpg",
-    },
-    {
-      id: 5,
-      name: "Slatt on",
-      singer: "Robber",
-      path: "./music/6.mp3",
-      image: "./img/img6.jpg",
-    },
-    {
-      id: 6,
-      name: "Chất lượng lên",
-      singer: "ICD",
-      path: "./music/7.mp3",
-      image: "./img/img7.jpg",
-    },
-  ],
-  render: () => {
-    let playList = document.querySelector(".playlist");
-    app.getData().then((son3) => {
-      console.log(son3);
-    });
-    let htmls = app.songs.map((song) => {
+  render: (Songs) => {
+    let htmls = Songs.map((song, index) => {
       return `
-        <div class="song">
+        <div class="song ${index === app.currentIndex ? "active" : ""}">
             <div
               class="thumb"
               style="
@@ -84,11 +47,29 @@ const app = {
     });
     playList.innerHTML = htmls.join("");
   },
+
+  defineProperties: function () {
+    Object.defineProperty(this, "currentSong", {
+      get: function () {
+        return this.Songs[this.currentIndex];
+      },
+    });
+  },
+
   // những hàm xử lý event sẽ nằm trong đây
   handleEvents: () => {
-    let cd = document.querySelector(".cd");
-    const cdWidth = cd.offsetWidth;
+    const listSongs = document.querySelectorAll(".song");
+    console.log(listSongs);
+    // xử lý CD  rotate adn pause nếu dùng css thì mỗi khi bấm dừng nó lại quay cái ảnh về lúc ban đầu
 
+    let cdThumbAnimate = cdThumb.animate([{ transform: "rotate(360deg)" }], {
+      duration: 10000, // 10 seconds
+      iterations: Infinity,
+    });
+    cdThumbAnimate.pause();
+
+    // xử lý phóng to cd thu nhỏ cd
+    const cdWidth = cd.offsetWidth;
     document.addEventListener("scroll", () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
       const newWidth = cdWidth - scrollTop;
@@ -96,138 +77,164 @@ const app = {
       cd.style.width = newWidth > 5 ? newWidth + "px" : 0 + "px";
       cd.style.opacity = opacityCd;
     });
-
-    // test trình phát nhạc
-    const player = document.querySelector(".player");
-    const listSongs = document.querySelectorAll(".song");
-    const audioPlay = document.querySelector("#audio");
-    const buttonPlay = document.querySelector(".btn-toggle-play");
-    const cdThumb = cd.querySelector(".cd-thumb");
-    const nameSongNow = document.querySelector(".songName");
-    const btnPrev = document.querySelector(".btn-prev");
-    const btnNext = document.querySelector(".btn-next");
-    // cd xoay
-    cdRotate = () => {
-      cdThumb.classList.add("songRotate");
-    };
-    cdUnRotate = () => {
-      cdThumb.classList.remove("songRotate");
-    };
-    // control
-
-    playMusic = () => {
-      audioPlay.play();
-      player.classList.add("playing");
-      cdRotate();
-    };
-    pauseMusic = () => {
-      audioPlay.pause();
-      player.classList.remove("playing");
-      cdUnRotate();
-    };
-
-    // play
-    buttonPlay.addEventListener("click", () => {
-      if (audioPlay.paused) {
-        playMusic();
+    // xử lý play / pause
+    playBtn.addEventListener("click", () => {
+      if (app.isPlaying) {
+        audio.pause();
       } else {
-        pauseMusic();
+        audio.play();
       }
     });
 
-    playNewMusic = (index) => {
-      audioPlay.src = app.songs[index].path;
-      cdThumb.style.backgroundImage = `url(${app.songs[index].image})`;
-      nameSongNow.innerHTML = app.songs[index].name;
-      playMusic();
-    };
+    // không nhất thiết khi bấm nút play thì mới play nên mới tách ra , khi audio được play ở chỗ khác thì vẫn chuyển đổi nút được
 
-    listSongs.forEach((song, index) => {
-      song.addEventListener("click", () => {
-        playNewMusic(index);
-      });
+    // khi song được play
+    audio.addEventListener("play", () => {
+      app.isPlaying = true;
+      player.classList.add("playing");
+      cdThumbAnimate.play();
     });
 
-    // range
-    const process = document.querySelector(".progress");
-    // nút trượt theo nhạc
-    audioPlay.addEventListener("timeupdate", () => {
-      const percent = 100 * (audioPlay.currentTime / audioPlay.duration);
-      process.value = percent;
-      if (audioPlay.currentTime == audioPlay.duration) {
-        player.classList.remove("playing");
-        cdUnRotate();
+    // khi song bị pause
+    audio.addEventListener("pause", () => {
+      app.isPlaying = false;
+      player.classList.remove("playing");
+      cdThumbAnimate.pause();
+    });
+
+    // thanh range chạy
+    audio.addEventListener("timeupdate", () => {
+      if (audio.duration) {
+        let percentTime = (audio.currentTime / audio.duration) * 100;
+        progress.value = percentTime;
       }
     });
 
-    // xả nhạc
-    process.addEventListener("input", () => {
-      // range nó tính trên thang 100 còn thời gian của nhạc có thể nhiều hơn nên phải chia tỷ lệ
-      let percent = (process.value / 100) * audioPlay.duration;
-      audioPlay.currentTime = percent;
-      if (audioPlay.paused) {
-        playMusic();
-      }
+    // khi thay đổi thanh range (thanh thời gian bài hát )
+    progress.addEventListener("input", () => {
+      let current = (progress.value / 100) * audio.duration;
+      audio.currentTime = current;
     });
-    // repeat
-    const repeatBtn = document.querySelector(".btn-repeat");
-    repeatBtn.addEventListener("click", () => {
-      audioPlay.currentTime = 0;
-      cdUnRotate();
-      setTimeout(() => {
-        playMusic();
-      }, 500);
-    });
-    // next and prev
-    btnPrev.addEventListener("click", () => {
-      const nameSongNow2 = document.querySelector(".songName");
 
-      const obj = app.songs.find(
-        (item) => item.name === nameSongNow2.innerText
-      );
-      let idSong = obj ? obj.id - 1 : null;
-      console.log(idSong);
-      if (idSong < 0) {
-        idSong = 0;
+    // code test
+    // progress.addEventListener("mousedown", () => {
+    //   isSeeking = true; // đang kéo
+    // });
+
+    // progress.addEventListener("mouseup", () => {
+    //   isSeeking = false; // thả chuột xong
+    // });
+
+    // next song
+
+    nextBtn.addEventListener("click", () => {
+      const currentActive = document.querySelector(".song.active");
+      currentActive.classList.remove("active");
+      if (app.isRandom) {
+        app.playRandomSong();
+        listSongs[app.currentIndex].classList.add("active"); // add active cho bài hát đang phát
+      } else {
+        app.nextSong();
+        listSongs[app.currentIndex].classList.add("active");
       }
-
-      playNewMusic(idSong);
+      audio.play();
     });
-    btnNext.addEventListener("click", () => {
-      const nameSongNow2 = document.querySelector(".songName");
 
-      const obj = app.songs.find(
-        (item) => item.name === nameSongNow2.innerText
-      );
-      let idSong = obj ? obj.id + 1 : null;
-      console.log(idSong);
-      if (idSong > app.songs.length - 1) {
-        idSong = app.songs.length - 1;
+    // prevSong
+    prevBtn.addEventListener("click", () => {
+      const currentActive = document.querySelector(".song.active");
+      currentActive.classList.remove("active");
+
+      if (app.isRandom) {
+        app.playRandomSong();
+        listSongs[app.currentIndex].classList.add("active");
+      } else {
+        app.prevSong();
+        listSongs[app.currentIndex].classList.add("active");
       }
-
-      playNewMusic(idSong);
+      audio.play();
     });
 
     // random
-    let btnRandom = document.querySelector(".btn-random");
-    btnRandom.addEventListener("click", () => {
-      playNewMusic(Math.floor(Math.random() * app.songs.length));
+    randomBtn.addEventListener("click", () => {
+      app.isRandom = !app.isRandom;
+      randomBtn.classList.toggle("active", app.isRandom);
+      // nếu isRandom == true thì add ngược lại remove
+    });
+
+    // bấm vào bài hát ở playList và play
+    listSongs.forEach((song, index) => {
+      song.addEventListener("click", () => {
+        const currentActive = document.querySelector(".song.active");
+        currentActive.classList.remove("active");
+        app.currentIndex = index;
+        song.classList.add("active");
+        app.loadCurrentSong();
+        audio.play();
+      });
+    });
+    // repeat khi hết bài
+    repeatBtn.addEventListener("click", () => {
+      app.isRepeat = !app.isRepeat;
+      repeatBtn.classList.toggle("active", app.isRepeat);
+    });
+    // khi hết bài thì next
+    audio.addEventListener("ended", () => {
+      if (app.isRepeat) {
+        audio.play();
+      } else {
+        if (app.isRandom) {
+          app.playRandomSong();
+        } else {
+          app.nextSong();
+        }
+        audio.play();
+      }
     });
   },
-  start: () => {
-    app.render();
+  loadCurrentSong: function () {
+    heading.textContent = this.currentSong.name;
+    cdThumb.style.backgroundImage = `url(${this.currentSong.image})`;
+    audio.src = this.Songs[this.currentIndex].path;
+  },
+  nextSong: function () {
+    this.currentIndex++;
+    if (this.currentIndex >= this.Songs.length) {
+      this.currentIndex = 0;
+    }
+    this.loadCurrentSong();
+    console.log(this.currentIndex);
+  },
+  prevSong: function () {
+    this.currentIndex--;
+    if (this.currentIndex < 0) {
+      this.currentIndex = this.Songs.length - 1;
+    }
+    this.loadCurrentSong();
+    console.log(this.currentIndex);
+  },
+  playRandomSong: function () {
+    let randomIndex;
+    do {
+      randomIndex = Math.floor(Math.random() * app.Songs.length);
+    } while (randomIndex === app.currentIndex);
+    app.currentIndex = randomIndex;
+    this.loadCurrentSong();
+    audio.play();
+  },
+  start: async function () {
+    await this.getData();
+
+    // định nghĩa thuộc tính cho app
+    app.defineProperties();
+
+    // tải thông tin của bài hát đầu tiên
+    app.loadCurrentSong();
+
+    app.render(app.Songs);
     app.handleEvents();
+    // tải thông tin bài hát đầu tiên vào UI(user interface)
   },
 };
 
 app.start();
-
-// let apiMusic = "http://localhost:3000/songs";
-
-// fetch(apiMusic)
-//   .then((response) => {
-//     return response.json();
-//   })
-//   .then((data) => {
-//     console.log(data);
-//   });
