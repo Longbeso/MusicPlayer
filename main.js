@@ -114,6 +114,7 @@ const app = {
     progress.addEventListener("input", () => {
       let current = (progress.value / 100) * audio.duration;
       audio.currentTime = current;
+      audio.play();
     });
 
     // code test
